@@ -1,0 +1,11 @@
+import string
+import tweet
+
+def calc_sentiment(tweet):
+    sentiment=0.0
+    for word in tweet.message.split():
+        word = [''.join(c for c in s if c not in string.punctuation) for s in x]
+        if word.lower().strip() in sentfile:
+            sentiment += float(sentfile[word])
+    return sentiment
+    
