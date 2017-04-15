@@ -9,3 +9,4 @@ def calc_sentiment(tweet):
             sentiment += float(sentfile[word])
     return sentiment
     
+Now I'm changing some stuff
