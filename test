@@ -1,11 +1,92 @@
+from tweet import Tweet 
+from geo import GeoPosition
+import os   
+from state import State, load_states
+#from country import _RenderedState, Country, createUSA, _mergeBounds
+from colors import get_sentiment_color
+from parse import load_sentiments, load_tweets
 import string
-import tweet
 
-def calc_sentiment(tweet):
+"""#####################################################################################"""
+
+
+searchterm = raw_input("Please enter the term that you would like to search for: ")
+
+
+alltweets = file('tweets_with_time_4.json', 'r')
+
+post = alltweets.readline()
+
+postarray = [] #an empty array to store the posts in as a tweet type
+
+
+while post != '': #turns all of the tweets in the file into an array of tweet types
+    postmessage = post[post.find("text")+7:post.find("created_at")-3]
+    posttime = post[post.find("created_at")+13:post.find("coordinates")-3]
+    postloc = post[post.find("coordinates")+14:len(post)-2]
+    reclasspost = Tweet(postmessage,posttime,postloc)
+    postarray.append(reclasspost)
+    post = alltweets.readline()
+
+numberof_posts = len(postarray)
+
+"""#####################################################################################"""
+
+
+
+statestuff = load_states() #loadstates gives all of the state information
+
+                        
+def whichstate(tweetpost): #takes a tweet type post and returns which state that post is in  
+    distance_list = [] #creates a list to store all the centroid distances in
+    for state in statestuff:
+        longlat_list = map(float, tweetpost.position()[1:len(tweetpost.position())-1].split(","))# makes a list with the longitude and latitude of a post
+        relonglat = GeoPosition(longlat_list[1],longlat_list[0]) #.................................converts the list into a GeoPosition type
+        tweetdistance = state.centroid().distance(relonglat)  #....................................calculates the distance form the centroid of each state to the tweet
+        distance_list.append(tweetdistance)  #.....................................................adds distatnce of post to the distance list and maintains order
+    min_distance = min(distance_list)     #........................................................finds the minimum distance amoung all the distances stored in the distance list
+    minindex = distance_list.index(min_distance)
+    return statestuff[minindex].abbrev()
+
+
+
+"""#####################################################################################"""
+
+sentfile = load_sentiments() #dictionary with all of the sentiments
+
+tweets_with_term = []
+                          
+for i in range(0,numberof_posts,1): #returns a list of all the tweets that contaqin the desired search term
+    post_message = postarray[i].message()
+    if searchterm in post_message:
+        tweets_with_term.append(postarray[i])
+
+
+"""#####################################################################################"""
+
+def calc_sentiment(tweet): #calcualtes the sentiment of a given tweet
     sentiment=0.0
     for word in tweet.message.split():
-        word = [''.join(c for c in s if c not in string.punctuation) for s in x]
+        word = [''.join(c for c in s if c not in string.punctuation) for s in word]
         if word.lower().strip() in sentfile:
             sentiment += float(sentfile[word])
     return sentiment
-    
+
+"""#####################################################################################"""
+
+sst = [] #holds value for the statecode, sentiment, and timestamp
+
+times_tweeted = len(tweets_with_term)      
+      
+for j in range(0, times_tweeted, 1):
+    state = whichstate(tweets_with_term[j])
+    sentiment = calc_sentiment(tweets_with_term[j])
+    time = tweets_with_term.timestamp()
+    sst.append([state, sentiment, time])
+
+  
+      
+"""#####################################################################################"""     
+      
+      
+raw_input("press any key to exit")
